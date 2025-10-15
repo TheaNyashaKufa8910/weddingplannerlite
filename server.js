@@ -1,35 +1,28 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import connectDB from './src/config/db.js';
-import eventRoutes from './src/routes/eventRoutes.js';
-import vendorRoutes from './src/routes/vendorRoutes.js';
-import authRoutes from './src/routes/authRoutes.js';
-import notFound from './src/middleware/notFound.js';
-import errorHandler from './src/middleware/errorMiddleware.js';
+import express from "express";
+import dotenv from "dotenv";
+import { requireAuth } from "@clerk/express"; // ✅ latest SDK
+import mongoose from "mongoose";
+import weddingRoutes from "./routes/weddingRoutes.js";
 
-// 1️⃣ Load environment variables
 dotenv.config();
 
-// 2️⃣ Initialize Express app
 const app = express();
-
-// 3️⃣ Middleware
 app.use(express.json());
 
-// 4️⃣ Connect to MongoDB
-connectDB();
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error(err));
 
-// 5️⃣ Routes
-app.get('/', (req, res) => res.send('Wedding Planner Lite API is running...'));
-app.use('/api/events', eventRoutes);
-app.use('/api/vendors', vendorRoutes);
-app.use('/api/auth', authRoutes);
+// Example protected route
+app.get("/protected", requireAuth(), (req, res) => {
+  res.send(`Hello ${req.auth.userId}, you are authenticated!`);
+});
 
-// 6️⃣ 404 and error handlers (always at the end)
-app.use(notFound);
-app.use(errorHandler);
+// Use wedding routes (all protected inside routes)
+// app.use("/api/weddings", weddingRoutes);
 
-// 7️⃣ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
